@@ -99,9 +99,19 @@ def fetch_full_name(ticker):
 # --------------------------
 if st.button("Run Analysis"):
     with st.spinner("Fetching data..."):
-        # Here we explicitly fetch 'Close' instead of 'Adj Close'.
-        global_data = yf.download(tickers, start=start_date, end=end_date, progress=False)['Adj Close']
-    
+        data = yf.download(tickers, start=start_date, end=end_date, progress=False)
+        # Check if columns are MultiIndex and try to fetch 'Adj Close' if available; otherwise, fallback to 'Close'
+        if isinstance(data.columns, pd.MultiIndex):
+            if 'Adj Close' in data.columns.get_level_values(0):
+                global_data = data['Adj Close']
+            else:
+                global_data = data['Close']
+        else:
+            if 'Adj Close' in data.columns:
+                global_data = data[['Adj Close']]
+            else:
+                global_data = data
+
     # Fetch full names for all tickers from yfinance
     full_names = {}
     with st.spinner("Fetching ticker names..."):
@@ -154,7 +164,7 @@ if st.button("Run Analysis"):
         historical_stress = stress_test(ticker_returns, stress_periods, lambda x: calculate_var(x, confidence_level))
         parametric_stress = stress_test(ticker_returns, stress_periods, lambda x: calculate_parametric_var(x, confidence_level))
         
-        # COVID-19
+        # COVID-19 Stress Test
         hist_covid = historical_stress.loc['COVID-19'] if 'COVID-19' in historical_stress.index else None
         para_covid = parametric_stress.loc['COVID-19'] if 'COVID-19' in parametric_stress.index else None
         stress_summary_covid.append({
@@ -170,7 +180,7 @@ if st.button("Run Analysis"):
             "Parametric Std Dev": f"{para_covid['Returns Std Dev']:.2%}" if para_covid is not None else "NA"
         })
         
-        # Adani_Crisis
+        # Adani Crisis Stress Test
         hist_adani = historical_stress.loc['Adani_Crisis'] if 'Adani_Crisis' in historical_stress.index else None
         para_adani = parametric_stress.loc['Adani_Crisis'] if 'Adani_Crisis' in parametric_stress.index else None
         stress_summary_adani.append({
@@ -187,7 +197,7 @@ if st.button("Run Analysis"):
         })
     
     # Finalize NAV Growth Plot
-    ax.set_title("NAV Growth Comparison (Using 'Close')")
+    ax.set_title("NAV Growth Comparison (Using 'Adj Close' if available, else 'Close')")
     ax.set_ylabel("Normalized NAV")
     ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
     ax.grid(True)
@@ -199,7 +209,6 @@ if st.button("Run Analysis"):
     st.subheader("Full Period VaR Analysis")
     full_period_var_df = pd.DataFrame(full_period_results).T.reset_index().rename(columns={"index": "Ticker"})
     full_period_var_df["ETF Full Name"] = full_period_var_df["Ticker"].map(full_names)
-    # Reorder so that Ticker and ETF Full Name are first columns
     cols = full_period_var_df.columns.tolist()
     new_order = ["Ticker", "ETF Full Name"] + [c for c in cols if c not in ["Ticker", "ETF Full Name"]]
     full_period_var_df = full_period_var_df[new_order]

@@ -46,4 +46,4 @@ To run the app locally:
 
    ```bash
    git clone https://github.com/jeevanba273/VaR-Analysis.git
-   cd var-analysis
+   cd VaR-Analysis

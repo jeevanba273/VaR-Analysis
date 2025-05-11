@@ -22,7 +22,10 @@ Welcome to the **Value-at-Risk (VaR) Analysis App** – an interactive tool desi
 ## Hosted App
 
 Experience the full functionality of the VaR Analysis App live at:  
-[https://var-analysis.streamlit.app/](https://var-analysis.streamlit.app/)
+[**VaR Analysis App**](https://var-analysis.up.railway.app/)
+
+Alternate Link:  
+[**VaR Analysis App**](https://var-analysis.streamlit.app/)
 
 ## How It Works
 
